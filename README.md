@@ -9,6 +9,7 @@ A 60-day algorithmic trading strategy for Apple Inc. (AAPL) built in Python, com
 This project implements a systematic long/short trading strategy on AAPL. The pipeline covers data retrieval, indicator computation, signal generation with risk filtering, backtested performance evaluation, and Sharpe ratio calculation.
 
 **Core logic:**
+
 - Enter **long** when MACD crosses above its signal line *and* price is below the 20-period Bollinger Band midline
 - Enter **short** when MACD crosses below its signal line *and* price is above the 20-period Bollinger Band midline
 - Exit on the opposite MACD crossover
@@ -26,9 +27,7 @@ aapl = yf.Ticker("AAPL")
 data = aapl.history(period='60d', interval='1h')
 ```
 
-60 days of hourly AAPL price data (~600 bars) pulled via `yfinance`.
-
----
+60 days of hourly AAPL price data (~400 bars) pulled via `yfinance`.
 
 ### 2. Indicators
 
@@ -41,12 +40,12 @@ data['MACD']  = data['EMA12'] - data['EMA26']
 data['Signal_Line'] = data['MACD'].ewm(span=9, adjust=False).mean()
 ```
 
-| Component | Description |
-|---|---|
-| EMA12 | 12-period EMA — fast line |
-| EMA26 | 26-period EMA — slow line |
-| MACD | EMA12 − EMA26 |
-| Signal Line | 9-period EMA of MACD |
+| Component   | Description               |
+| ----------- | ------------------------- |
+| EMA12       | 12-period EMA, fast line  |
+| EMA26       | 26-period EMA, slow line  |
+| MACD        | EMA12 − EMA26             |
+| Signal Line | 9-period EMA of MACD      |
 
 #### Bollinger Band midline (risk filter)
 
@@ -56,8 +55,6 @@ data['BB_Middle'] = data['Close'].rolling(window=BB_PERIOD).mean()
 ```
 
 Used as a trend filter: longs are only taken below the midline, shorts only above it.
-
----
 
 ### 3. Signal Logic
 
@@ -71,14 +68,12 @@ bb_buy_filter  = current['Close'] < current['BB_Middle']
 bb_sell_filter = current['Close'] > current['BB_Middle']
 ```
 
-| Signal | Condition |
-|---|---|
-| Long entry | MACD bullish crossover AND price < BB midline |
+| Signal      | Condition                                     |
+| ----------- | --------------------------------------------- |
+| Long entry  | MACD bullish crossover AND price < BB midline |
 | Short entry | MACD bearish crossover AND price > BB midline |
-| Long exit | MACD bearish crossover |
-| Short exit | MACD bullish crossover |
-
----
+| Long exit   | MACD bearish crossover                        |
+| Short exit  | MACD bullish crossover                        |
 
 ### 4. Backtesting
 
@@ -106,18 +101,18 @@ total_pnl     = final_equity - initial_cash
 total_pnl_pct = (total_pnl / initial_cash) * 100
 ```
 
----
-
 ### 5. Performance Metrics
 
 #### Sharpe Ratio
 
+Computed on hourly equity-curve returns, with bars per day taken from the data and a risk-free rate of 0:
+
 ```python
-annualization_factor        = 252 * 6.5   # 1638 trading hours/year
-annualized_return           = returns.mean() * annualization_factor
-annualized_vol              = returns.std()  * np.sqrt(annualization_factor)
-sharpe_ratio                = annualized_return / annualized_vol
+bars_per_day  = len(data) / data.index.normalize().nunique()
+sharpe_hourly = r.mean() / r.std() * np.sqrt(252 * bars_per_day)
 ```
+
+`backtesting.py` also reports its own `Sharpe Ratio`, which is annualised differently, so the two values may not match.
 
 #### Outputs
 
@@ -127,23 +122,41 @@ sharpe_ratio                = annualized_return / annualized_vol
 
 ---
 
+## Results
+
+Run `python strategy.py` and copy the values printed under "AAPL strategy: performance".
+
+| Metric                 | Value |
+| ---------------------- | ----- |
+| Test period            | TODO  |
+| Total return           | TODO  |
+| Annualised return      | TODO  |
+| Sharpe ratio           | TODO  |
+| Maximum drawdown       | TODO  |
+| Buy-and-hold return    | TODO  |
+| Strategy vs buy-and-hold | TODO |
+
+> **Caveat:** the test window is only ~60 days of hourly data, so these figures are noisy. The annualised return is an extrapolation from a short sample and should be read next to the total return. Results change with the day the data is downloaded, since `yfinance` returns a rolling window.
+
+---
+
 ## Tech Stack
 
-| Library | Role |
-|---|---|
-| `yfinance` | Market data retrieval |
-| `pandas` | Data manipulation and indicator calculation |
-| `numpy` | Numerical operations and annualisation |
-| `matplotlib` | Equity curve and histogram plotting |
-| `backtesting.py` | Strategy backtesting framework |
+| Library          | Role                                        |
+| ---------------- | ------------------------------------------- |
+| `yfinance`       | Market data retrieval                       |
+| `pandas`         | Data manipulation and indicator calculation |
+| `numpy`          | Numerical operations and annualisation      |
+| `matplotlib`     | Equity curve and histogram plotting         |
+| `backtesting.py` | Strategy backtesting framework              |
 
 ---
 
 ## Installation
 
 ```bash
-git clone https://github.com/marcotummolillo27/Trading-strategy-for-Apple-AAPL-equity.git
-cd Trading-strategy-for-Apple-AAPL-equity
+git clone https://github.com/marcotummolillo27/Trading-stratedy-for-Apple-AAPL-equity.git
+cd Trading-stratedy-for-Apple-AAPL-equity
 pip install yfinance pandas numpy matplotlib backtesting
 python strategy.py
 ```
@@ -153,7 +166,7 @@ python strategy.py
 ## Project Structure
 
 ```
-├── strategy.py    # Data retrieval, indicators, simulation, Sharpe ratio, plots
+├── strategy.py    # Data retrieval, indicators, simulation, backtest, metrics, plots
 └── README.md
 ```
 
@@ -162,7 +175,7 @@ python strategy.py
 ## About
 
 Built as part of an independent exploration of quantitative finance and algorithmic trading.  
-**Marco Tummolillo** — Actuarial Science, University of Amsterdam  
+**Marco Tummolillo**, Actuarial Science, University of Amsterdam  
 [GitHub](https://github.com/marcotummolillo27)
 
 > *This project is for educational purposes only and does not constitute financial advice.*
